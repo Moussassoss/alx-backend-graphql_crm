@@ -17,6 +17,23 @@ class ProductType(DjangoObjectType):
 class OrderType(DjangoObjectType):
     class Meta:
         model = Order
+# -----------------------------
+# Query
+# -----------------------------
+class Query(graphene.ObjectType):
+    all_customers = graphene.List(CustomerType)
+    all_products = graphene.List(ProductType)
+    all_orders = graphene.List(OrderType)
+
+    def resolve_all_customers(root, info):
+        return Customer.objects.all()
+
+    def resolve_all_products(root, info):
+        return Product.objects.all()
+
+    def resolve_all_orders(root, info):
+        return Order.objects.prefetch_related('products').all()
+
 
 # -----------------------------
 # CreateCustomer
