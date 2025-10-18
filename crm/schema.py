@@ -1,40 +1,54 @@
 import graphene
 from graphene_django import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField
+from graphene import relay
 from django.core.validators import RegexValidator
 from django.db import IntegrityError, transaction
 from .models import Customer, Product, Order
+from .filters import CustomerFilter, ProductFilter, OrderFilter
 
 # -----------------------------
 # GraphQL Types
 # -----------------------------
-class CustomerType(DjangoObjectType):
+
+# Relay-enabled types with filtering
+class CustomerNode(DjangoObjectType):
     class Meta:
         model = Customer
+        interfaces = (relay.Node,)
+        filterset_class = CustomerFilter
 
-class ProductType(DjangoObjectType):
+class ProductNode(DjangoObjectType):
     class Meta:
         model = Product
+        interfaces = (relay.Node,)
+        filterset_class = ProductFilter
 
-class OrderType(DjangoObjectType):
+class OrderNode(DjangoObjectType):
     class Meta:
         model = Order
+        interfaces = (relay.Node,)
+        filterset_class = OrderFilter
 
 # -----------------------------
 # Queries
 # -----------------------------
 class Query(graphene.ObjectType):
-    all_customers = graphene.List(CustomerType)
-    all_products = graphene.List(ProductType)
-    all_orders = graphene.List(OrderType)
+    all_customers = DjangoFilterConnectionField(CustomerNode)
+    all_products = DjangoFilterConnectionField(ProductNode, order_by=graphene.String())
+    all_orders = DjangoFilterConnectionField(OrderNode, order_by=graphene.String())
 
-    def resolve_all_customers(root, info):
-        return Customer.objects.all()
+    def resolve_all_products(root, info, order_by=None, **kwargs):
+        qs = Product.objects.all()
+        if order_by:
+            qs = qs.order_by(order_by)
+        return qs
 
-    def resolve_all_products(root, info):
-        return Product.objects.all()
-
-    def resolve_all_orders(root, info):
-        return Order.objects.prefetch_related('products').all()
+    def resolve_all_orders(root, info, order_by=None, **kwargs):
+        qs = Order.objects.prefetch_related('products').all()
+        if order_by:
+            qs = qs.order_by(order_by)
+        return qs
 
 # -----------------------------
 # Mutations
@@ -50,7 +64,7 @@ class CreateCustomer(graphene.Mutation):
     class Arguments:
         input = CreateCustomerInput(required=True)
 
-    customer = graphene.Field(CustomerType)
+    customer = graphene.Field(CustomerNode)
     message = graphene.String()
 
     @staticmethod
@@ -78,7 +92,7 @@ class BulkCreateCustomers(graphene.Mutation):
     class Arguments:
         input = graphene.List(CreateCustomerInput, required=True)
 
-    customers = graphene.List(CustomerType)
+    customers = graphene.List(CustomerNode)
     errors = graphene.List(graphene.String)
 
     @staticmethod
@@ -117,7 +131,7 @@ class CreateProduct(graphene.Mutation):
     class Arguments:
         input = CreateProductInput(required=True)
 
-    product = graphene.Field(ProductType)
+    product = graphene.Field(ProductNode)
     message = graphene.String()
 
     @staticmethod
@@ -143,7 +157,7 @@ class CreateOrder(graphene.Mutation):
     class Arguments:
         input = CreateOrderInput(required=True)
 
-    order = graphene.Field(OrderType)
+    order = graphene.Field(OrderNode)
     message = graphene.String()
 
     @staticmethod
