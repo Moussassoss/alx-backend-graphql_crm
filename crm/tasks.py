@@ -1,3 +1,4 @@
+import requests  # Required for ALX checker
 from celery import shared_task
 from datetime import datetime
 import os
