@@ -1,9 +1,9 @@
 from celery import shared_task
 from datetime import datetime
 import os
-
 from django.db.models import Sum
 from crm.models import Customer, Order
+
 
 @shared_task
 def generate_crm_report():
