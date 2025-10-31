@@ -4,7 +4,8 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene import relay
 from django.core.validators import RegexValidator
 from django.db import IntegrityError, transaction
-from crm.models import Customer, Product, Order
+from .models import Customer, Product, Order
+from crm.models import Product
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 
 # -----------------------------
